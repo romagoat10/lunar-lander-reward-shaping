@@ -1,8 +1,8 @@
 # Lunar Lander: Reward Shaping
 
-**Can changing the reward help a PPO agent land a spacecraft—or teach it the wrong goal?**
+**Can changing the reward help a PPO agent land—or teach it the wrong goal?**
 
-This project trains PPO agents to play Gymnasium's LunarLander-v3 and compares the built-in reward, a flawed +1-per-frame hover bonus, and potential-difference reward shaping. Agents are evaluated on the original game score so that reward hacking is visible.
+This project trains PPO agents on Gymnasium's LunarLander-v3 and compares the built-in reward with two shaped rewards. Evaluation uses the original game score, so a higher training reward cannot be confused with better landings.
 
 **Author:** Ramazan · [GitHub profile](https://github.com/romagoat10)
 
@@ -10,19 +10,19 @@ I used AI assistance while drafting and debugging parts of the code. I ran the t
 
 ## Watch the agent
 
-[Watch the five-episode baseline evaluation](baseline_seed_0.mp4)
+[Watch five baseline evaluation episodes](baseline_seed_0.mp4)
 
 ## Results
 
-Each design was trained for 300,000 steps with training seeds 0, 1, and 2. Each of the nine final checkpoints was evaluated on the same 20 held-out environment reset seeds. Values show the mean of three model-level averages and sample standard deviation (SD) across training seeds. Solve-rate variation is in percentage points (pp).
+Each model was trained for 300,000 steps. Six training seeds (0–5) were used for each reward design. Each of the 18 final models was evaluated on the same 20 held-out environment reset seeds. The table reports the mean of the six model-level averages and sample standard deviation (SD) across training seeds. Solve-rate SD is shown in percentage points (pp).
 
 | Reward design | Original task return (mean ± SD) | Solved episodes (mean ± SD) |
 | --- | ---: | ---: |
-| Built-in reward | **50.9 ± 86.0** | **23.3% ± 36.2 pp** |
-| +1 per frame (flawed hover bonus) | **−78.2 ± 66.7** | **0.0% ± 0.0 pp** |
-| Potential difference | **24.0 ± 85.2** | **13.3% ± 18.9 pp** |
+| Built-in reward | **45.4 ± 94.5** | **20.0% ± 29.4 pp** |
+| +1 per frame (flawed hover bonus) | **−68.1 ± 49.2** | **0.0% ± 0.0 pp** |
+| Potential difference | **14.4 ± 85.9** | **10.0% ± 13.0 pp** |
 
-The built-in reward had the highest mean in this run. The hover bonus performed poorly on the original landing objective. Results varied widely by training seed, and three seeds are too few to establish a reliable ranking. Potential shaping did not consistently outperform the baseline in this experiment.
+The built-in reward had the highest mean in this run. The hover bonus performed poorly on the original landing objective. Scores still varied widely between training seeds, so these results do not establish a reliable general ranking. Potential shaping did not consistently outperform the baseline in this experiment.
 
 - [Episode-level evaluation data](results/multiseed_evaluation.csv)
 - [Aggregated results](results/summary.csv)
@@ -30,90 +30,63 @@ The built-in reward had the highest mean in this run. The hover bonus performed 
 
 ## Experiment design
 
-All agents use PPO (Proximal Policy Optimization) with the same small multilayer perceptron policy in LunarLander-v3.
+All agents use PPO with the same MLP policy in LunarLander-v3.
 
-1. **Built-in reward:** Gymnasium's original landing score.
-2. **Hover bonus:** adds +1 each frame. This deliberately flawed rule can reward staying in the air without landing safely.
-3. **Potential difference:** adds gamma * Phi(next_state) - Phi(state), using a potential based on distance, speed, tilt, and spin. Terminal potential is zero.
+1. **Built-in reward:** the game's original landing score.
+2. **Hover bonus:** adds +1 each frame; this flawed rule can reward staying aloft without landing safely.
+3. **Potential difference:** adds gamma × Phi(next_state) − Phi(state), based on distance, speed, tilt, and spin. Terminal potential is zero.
 
-The evaluator records original task return separately from shaped training return. This helps show when an agent improves its training score without improving the intended landing task.
+The evaluator records the original task return separately from the shaped training return to help identify reward hacking.
 
-## Setup on Windows
+## Run on Windows
 
-Python 3.13 was used for this setup. From the repository folder, open PowerShell:
+Python 3.13 was used. From PowerShell in the repository folder:
 
-~~~powershell
+```powershell
 py -3.13 -m venv .venv
-..venvScriptsActivate.ps1
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-~~~
+```
 
-### Check the environment
+### Quick setup check
 
-~~~powershell
-python ./src/random_rollout.py
-~~~
+```powershell
+python .\src\random_rollout.py
+```
 
-The random controller is expected to crash; this checks that the Box2D game opens.
+A random controller is expected to crash; this checks that the Box2D environment opens.
 
-### Train a quick baseline
+### Train and reproduce the comparison
 
-~~~powershell
-python ./src/train.py --experiment baseline --timesteps 20000 --seeds 0 --eval-freq 10000 --eval-episodes 2
-~~~
+```powershell
+python .\src\train.py --experiment all --timesteps 300000 --seeds 0 1 2 3 4 5
+python .\src\evaluate.py --experiment all --seeds 0 1 2 3 4 5 --episodes 20 --eval-seed 100000 --checkpoint final
+Copy-Item .\artifacts\results\episodes.csv .\results\multiseed_evaluation.csv
+python .\src\summarize_results.py
+python .\src\plot_results.py --results results\multiseed_evaluation.csv --output results\reward_comparison.png
+```
 
-This checks setup only; it is not enough to draw conclusions about learning performance.
+Models and logs are saved under artifacts/ and excluded from Git by default. Add --record-video to evaluation to save an MP4 per model.
 
-### Train the full comparison
+## Project files
 
-~~~powershell
-python ./src/train.py --experiment all --timesteps 300000 --seeds 0 1 2
-~~~
-
-Models, configurations, and logs are saved under artifacts/ and excluded from Git by default.
-
-### Evaluate and reproduce the held-out comparison
-
-~~~powershell
-python ./src/evaluate.py --experiment all --seeds 0 1 2 --episodes 20 --eval-seed 100000 --checkpoint final
-Copy-Item ./artifacts/results/episodes.csv ./results/multiseed_evaluation.csv
-python ./src/summarize_results.py
-python ./src/plot_results.py --results results/multiseed_evaluation.csv --output results/reward_comparison.png
-~~~
-
-The final checkpoint is used for each model to keep checkpoint selection consistent. Evaluation writes fresh metrics to artifacts/results/episodes.csv; the copy command saves a tracked snapshot in results/. Add --record-video to save MP4 videos (excluded from Git by default).
-
-### Plot results
-
-~~~powershell
-python ./src/plot_results.py
-~~~
-
-## Project structure
-
-~~~text
-src/
-  rocket_lander.py       Reward wrappers and environment setup
-  random_rollout.py      Random-policy environment walkthrough
-  train.py               PPO training
-  evaluate.py            Held-out evaluation and video recording
-  summarize_results.py   Aggregate metrics across training seeds
-  plot_results.py        Plot task score and solve rate
-requirements.txt         Python dependencies
-REPORT_TEMPLATE.md       Experiment report template
-baseline_seed_0.mp4      Five baseline evaluation episodes
-results/                 Tracked evaluation data, summary, and plot
-~~~
+```text
+src/                  Training, evaluation, environment, and analysis scripts
+results/              Tracked evaluation data, summary, and plot
+requirements.txt      Python dependencies
+REPORT_TEMPLATE.md    Experiment report template
+baseline_seed_0.mp4   Five baseline evaluation episodes
+```
 
 ## Limitations
 
-- Three training seeds provide an uncertain estimate of variation.
-- All agents share 20 held-out environment seeds; more test seeds would better assess generalization.
+- Six training seeds provide a better view of run-to-run variation, but the estimate is still uncertain.
+- All models share the same 20 held-out environment seeds; more test seeds would better assess generalization.
 - Longer training may change the results.
 - The video illustrates one model and does not prove reliable performance.
 
-This is a small controlled experiment, not proof that one reward design is universally best. A useful next step is to train more seeds and evaluate on a larger, separate set of environment seeds.
+This is a small controlled experiment, not proof that one reward design is universally best. A useful next step is to train more seeds and evaluate on a separate, larger set of environment seeds.
 
 ## References
 
