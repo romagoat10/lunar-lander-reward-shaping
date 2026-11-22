@@ -1,0 +1,6 @@
+gymnasium[box2d]>=1.2.3,<2
+stable-baselines3>=2.7,<3
+numpy>=1.24,<3
+pandas>=2.0,<4
+matplotlib>=3.7,<4
+imageio[ffmpeg]>=2.34,<3
