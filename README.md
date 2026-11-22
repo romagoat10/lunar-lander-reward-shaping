@@ -10,7 +10,7 @@ I used AI assistance while drafting and debugging parts of the code. I ran the t
 
 ## Watch the agent
 
-[Watch five baseline evaluation episodes](baseline_seed_0.mp4)
+[Watch five baseline evaluation episodes](baseline_seed_0.mp4). The clip comes from an earlier single-seed baseline run, not from the six-seed models in the results below.
 
 ## Results
 
@@ -22,11 +22,17 @@ Each model was trained for 300,000 steps. Six training seeds (0–5) were used f
 | +1 per frame (flawed hover bonus) | **−68.1 ± 49.2** | **0.0% ± 0.0 pp** |
 | Potential difference | **14.4 ± 85.9** | **10.0% ± 13.0 pp** |
 
+![Original task return and landing success rate for each reward design](results/reward_comparison.png)
+
 The built-in reward had the highest mean in this run. The hover bonus performed poorly on the original landing objective. Scores still varied widely between training seeds, so these results do not establish a reliable general ranking. Potential shaping did not consistently outperform the baseline in this experiment.
 
 - [Episode-level evaluation data](results/multiseed_evaluation.csv)
 - [Aggregated results](results/summary.csv)
 - [Reward comparison plot](results/reward_comparison.png)
+
+## Discussion
+
+One likely reason the potential reward did not help: LunarLander's built-in reward already includes potential-based shaping. Each step, the game rewards the change in a score based on the lander's distance from the pad, its speed and its tilt. My potential term adds a smaller version of the same signal on top, so it gives the agent little new information. A cleaner test would shape a reward that does not already contain this term.
 
 ## Experiment design
 
