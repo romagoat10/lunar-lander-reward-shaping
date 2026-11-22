@@ -1,0 +1,4 @@
+experiment,training_seeds,episodes_per_seed,mean_task_return,task_return_sd_across_seeds,mean_solve_rate,solve_rate_sd_across_seeds
+baseline,3,20,50.9103,85.9887,0.2333,0.3617
+hover_bonus,3,20,-78.1868,66.7164,0.0000,0.0000
+potential,3,20,24.0143,85.1617,0.1333,0.1893
