@@ -116,3 +116,8 @@ The next step is to evaluate all three reward designs across the same held-out e
 
 - [Gymnasium LunarLander documentation](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
 - [Stable-Baselines3 PPO documentation](https://stable-baselines3.readthedocs.io/en/master/modules/ppo.html)
+
+
+## Episode data
+
+The five baseline evaluation scores are available in [results/baseline_seed_0_episodes.csv](results/baseline_seed_0_episodes.csv).
